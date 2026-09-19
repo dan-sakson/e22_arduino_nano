@@ -163,13 +163,13 @@ void loop()
     }
     else if (wasSplashing)
     {
-        // Splash sequence just finished: show the ammo counter and switch the LEDs to solid mode color.
+        // Splash sequence just finished: switch the LEDs to solid mode color.
         applyModeColorToLeds();
         wasSplashing = false;
     }
 
     // Do not process button inputs while the splash sequence is active or was just active.
-    if (!ammoCounter->isSplashing() || wasSplashing)
+    if (!ammoCounter->isSplashing() && !wasSplashing)
     {
         if (checkButtonPressed(MODE_BUTTON_PIN, modeButtonLastReading, modeButtonState, modeButtonLastDebounceTime))
         {
