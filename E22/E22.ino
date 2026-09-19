@@ -15,12 +15,12 @@
 #define TRIGGER_PIN 9
 #define MODE_BUTTON_PIN 10
 
-#define AMMO_LED_COUNT 1  // The Ammo Counter's own mode-indicator LED
+#define AMMO_LED_COUNT 1     // The Ammo Counter's own mode-indicator LED
 #define MAX_BODY_LED_COUNT 8 // Upper bound on LEDs in the E22 body string (across all groups)
 
 const int MAX_AMMO = 99;
 const unsigned long TRIGGER_REPEAT_INTERVAL_MS = 200; // 5 shots/sec while trigger is held
-const int TRIGGER_PRESSED_STATE = HIGH; // trigger is normally-closed (closed unless pressed), so pressing it reads HIGH
+const int TRIGGER_PRESSED_STATE = HIGH;               // trigger is normally-closed (closed unless pressed), so pressing it reads HIGH
 
 // Number of LEDs in each body LED group. Any group (or all of them) may be 0 if that
 // part of the body has no LEDs installed. Update to match the physical build.
@@ -87,6 +87,12 @@ AmmoCounterLEDController<AMMO_LED_PIN, AMMO_LED_COUNT> *ammoLed;
 BodyLEDController<BODY_LED_PIN, MAX_BODY_LED_COUNT> *bodyLeds = nullptr; // stays null when no body LED groups are configured
 AmmoCounter *ammoCounter;
 
+// Returns true if the current mode is "Kill".
+bool modeIsKill()
+{
+    return MODE_SCREENS[modeIndex].mode == "Kill";
+}
+
 // Sum of all configured body LED group counts, used to decide whether the body LED controller is needed at all.
 int sumBodyLedGroupCounts()
 {
@@ -103,7 +109,7 @@ void updateSplashFlash(unsigned long now)
 {
     float progress = ammoCounter->splashProgress();
     unsigned long interval = SPLASH_FLASH_MAX_INTERVAL_MS -
-        (unsigned long)((SPLASH_FLASH_MAX_INTERVAL_MS - SPLASH_FLASH_MIN_INTERVAL_MS) * progress);
+                             (unsigned long)((SPLASH_FLASH_MAX_INTERVAL_MS - SPLASH_FLASH_MIN_INTERVAL_MS) * progress);
 
     if (now - lastSplashFlashToggleTime >= interval)
     {
@@ -163,7 +169,7 @@ void loop()
     }
 
     // Do not process button inputs while the splash sequence is active or was just active.
-    if ( !ammoCounter->isSplashing() || wasSplashing )
+    if (!ammoCounter->isSplashing() || wasSplashing)
     {
         if (checkButtonPressed(MODE_BUTTON_PIN, modeButtonLastReading, modeButtonState, modeButtonLastDebounceTime))
         {
@@ -178,20 +184,20 @@ void loop()
         }
 
         updateDebouncedState(TRIGGER_PIN, triggerButtonLastReading, triggerButtonState, triggerButtonLastDebounceTime);
-        if (triggerButtonState == TRIGGER_PRESSED_STATE && (millis() - lastTriggerFireTime) >= TRIGGER_REPEAT_INTERVAL_MS)
+        if (triggerButtonState == TRIGGER_PRESSED_STATE && (millis() - lastTriggerFireTime) >= TRIGGER_REPEAT_INTERVAL_MS && modeIsKill())
         {
             ammoCounter->decrementAmmo();
             trigger_updated = true;
             lastTriggerFireTime = millis();
         }
 
-        if (mode_updated && !ammoCounter->isSplashing())
+        if (mode_updated)
         {
             applyModeColorToLeds();
             ammoCounter->drawCounter();
             mode_updated = false;
         }
-        if (trigger_updated && !ammoCounter->isSplashing())
+        if (trigger_updated)
         {
             ammoCounter->drawCounter();
             trigger_updated = false;
